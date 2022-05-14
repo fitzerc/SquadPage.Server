@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using NPoco;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -8,12 +9,17 @@ namespace SquadPage.Server.Controllers
     [ApiController]
     public class SquadController : ControllerBase
     {
+        private readonly IConfiguration _config;
         // GET: api/<SquadController>
+        public SquadController(IConfiguration config)
+        {
+            _config = config;
+        }
+
         [HttpGet]
         public ActionResult<SquadInfo> Get()
         {
-            SquadInfo info = new SquadInfo(){ Name = "Test From Api" };
-            return info;
+            return new Database(_config).GetSquadInfo();
         }
 
         /*
@@ -44,8 +50,14 @@ namespace SquadPage.Server.Controllers
         */
     }
 
+    [TableName("squad")]
+    [PrimaryKey("squad_id")]
     public class SquadInfo
     {
+        [Column("squad_name")]
         public string Name { get; set; }
+
+        [Column("squad_id")]
+        public Int64 Id { get; set; }
     }
 }

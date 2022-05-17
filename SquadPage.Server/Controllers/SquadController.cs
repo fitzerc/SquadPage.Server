@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using NPoco;
-
-// For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+using SquadPage.Shared.DataInterfaces;
+using SquadPage.Shared.Models;
 
 namespace SquadPage.Server.Controllers
 {
@@ -9,55 +8,25 @@ namespace SquadPage.Server.Controllers
     [ApiController]
     public class SquadController : ControllerBase
     {
-        private readonly IConfiguration _config;
+        private readonly IDataAccess _dataAccess;
+
         // GET: api/<SquadController>
-        public SquadController(IConfiguration config)
+        public SquadController(IDataAccess dataAccess)
         {
-            _config = config;
+            _dataAccess = dataAccess;
         }
 
         [HttpGet]
-        public ActionResult<SquadInfo> Get()
+        public ActionResult<SquadInfoResp> Get()
         {
-            return new Database(_config).GetSquadInfo();
+            try
+            {
+                return _dataAccess.GetSquadInfo();
+            }
+            catch (Exception e)
+            {
+                return BadRequest(e.Message);
+            }
         }
-
-        /*
-        // GET api/<SquadController>/5
-        [HttpGet("{id}")]
-        public string Get(int id)
-        {
-            return "value";
-        }
-
-        // POST api/<SquadController>
-        [HttpPost]
-        public void Post([FromBody] string value)
-        {
-        }
-
-        // PUT api/<SquadController>/5
-        [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
-        {
-        }
-
-        // DELETE api/<SquadController>/5
-        [HttpDelete("{id}")]
-        public void Delete(int id)
-        {
-        }
-        */
-    }
-
-    [TableName("squad")]
-    [PrimaryKey("squad_id")]
-    public class SquadInfo
-    {
-        [Column("squad_name")]
-        public string Name { get; set; }
-
-        [Column("squad_id")]
-        public Int64 Id { get; set; }
     }
 }

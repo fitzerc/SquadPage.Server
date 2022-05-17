@@ -1,4 +1,7 @@
 
+using SquadPage.Data;
+using SquadPage.Shared.DataInterfaces;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -18,8 +21,9 @@ builder.Services.AddCors(options =>
         });
 });
 
-builder.Services.AddControllers().AddNewtonsoftJson();
 
+builder.Services.AddControllers().AddNewtonsoftJson();
+builder.Services.AddScoped<IDataAccess, DataAccess>();
 
 var app = builder.Build();
 

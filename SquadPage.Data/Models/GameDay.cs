@@ -1,4 +1,5 @@
 ﻿using NPoco;
+using SquadPage.Shared.Models;
 
 namespace SquadPage.Data.Models
 {
@@ -26,5 +27,19 @@ namespace SquadPage.Data.Models
 
         [Column("game_type")]
         public string Type { get; set; }
+
+        public GameDayInfo ToGameDayInfo()
+        {
+            return new GameDayInfo()
+            {
+                AwaySquadId = AwaySquadId,
+                GameDate = GameDate,
+                GameLocation = Location,
+                GameStatus = Status,
+                GameType = Type,
+                HomeSquadId = HomeSquadId,
+                Id = Id
+            };
+        }
     }
 }

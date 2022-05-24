@@ -1,4 +1,5 @@
 ﻿using NPoco;
+using SquadPage.Shared.Models;
 
 namespace SquadPage.Data.Models
 {
@@ -14,5 +15,15 @@ namespace SquadPage.Data.Models
 
         [Column("squad_number")]
         public int Number { get; set; }
+
+        public SquadInfoResp ToSquadInfoResp()
+        {
+            return new SquadInfoResp()
+            {
+                Id = Id,
+                Name = Name,
+                Number = Number
+            };
+        }
     }
 }

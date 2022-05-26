@@ -17,12 +17,26 @@ namespace SquadPage.Server.Controllers
         }
 
         [HttpGet]
-        [Route("/squad")]
+        [Route("bySquadNumber/{squadNumber}")]
+        public ActionResult<SquadInfoResp> GetBySquadNum(int squadNumber)
+        {
+            try
+            {
+                return _dataAccess.GetSquadInfoByNumber(squadNumber);
+            }
+            catch (Exception e)
+            {
+                return BadRequest(e.Message);
+            }
+        }
+
+        [HttpGet]
+        [Route("{squadId}")]
         public ActionResult<SquadInfoResp> Get(Int64 squadId)
         {
             try
             {
-                return _dataAccess.GetSquadInfo();
+                return _dataAccess.GetSquadInfo(squadId);
             }
             catch (Exception e)
             {

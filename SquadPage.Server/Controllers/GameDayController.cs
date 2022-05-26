@@ -17,6 +17,7 @@ namespace SquadPage.Server.Controllers
 
         // GET: GameDayController
         [HttpGet]
+        [Route("{squadId}")]
         public ActionResult<IEnumerable<GameDayInfo>> Get(Int64 squadId)
         {
             try

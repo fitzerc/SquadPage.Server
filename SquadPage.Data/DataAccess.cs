@@ -15,14 +15,14 @@ namespace SquadPage.Data
             _config = config;
         }
 
-        public SquadInfoResp GetSquadInfo()
+        public SquadInfoResp GetSquadInfo(Int64 squadId)
         {
             using var conn = new NpgsqlConnection(BuildConString());
             //move to singleton?
             using var db = new NPoco.Database(conn);
 
             db.Connection?.Open();
-            var dto = db.Fetch<Squad>().First();
+            var dto = db.Fetch<Squad>().First(squad => squad.Id == squadId);
 
             db.Connection?.Close();
 
@@ -30,13 +30,9 @@ namespace SquadPage.Data
             {
                 throw new Exception("Unable to retrieve data");
             }
-            var squad = new SquadInfoResp()
-            {
-                Id = dto.Id,
-                Name = dto.Name,
-                Record = new SquadRecord(0, 0, 0) //calculate at runtime?
-            };
 
+            var squad = dto.ToSquadInfoResp();
+            squad.Record.AddRecord(GetSquadRecord(squadId));
 
             return squad;
         }
@@ -67,6 +63,27 @@ namespace SquadPage.Data
             return responseSquads;
         }
 
+        public SquadInfoResp GetSquadInfoByNumber(int squadNumber)
+        {
+            using var conn = new NpgsqlConnection(BuildConString());
+            //move to singleton?
+            using var db = new NPoco.Database(conn);
+            db.Connection?.Open();
+
+            var squad = db.Fetch<Squad>().FirstOrDefault(squad => squad.Number == squadNumber, null);
+            db.Connection?.Close();
+
+            if (squad == null)
+            {
+                throw new Exception("Unable to retrieve data");
+            }
+
+            var squadInfo = squad.ToSquadInfoResp();
+            squadInfo.Record.AddRecord(GetSquadRecord(squadInfo.Id));
+
+            return squadInfo;
+        }
+
         private SquadRecord GetSquadRecord(Int64 squadId)
         {
             using var conn = new NpgsqlConnection(BuildConString());
@@ -86,14 +103,14 @@ namespace SquadPage.Data
                     .FirstOrDefault(0);
 
                 var homeWinsSql = "SELECT count(game_results_id) " +
-                                  "FROM game_results " + 
+                                  "FROM game_results " +
                                   "WHERE match_results_id = @matchId AND home_score > away_score";
-                var homeGameWins = db.Fetch<int>(homeWinsSql, new {matchId}).FirstOrDefault(0);
+                var homeGameWins = db.Fetch<int>(homeWinsSql, new { matchId }).FirstOrDefault(0);
 
                 var awayWinsSql = "SELECT count(game_results_id) " +
-                                  "FROM game_results " + 
+                                  "FROM game_results " +
                                   "WHERE match_results_id = @matchId AND home_score < away_score";
-                var awayGameWins = db.Fetch<int>(awayWinsSql, new {matchId}).FirstOrDefault(0);
+                var awayGameWins = db.Fetch<int>(awayWinsSql, new { matchId }).FirstOrDefault(0);
 
                 var recordForResults = GetRecordFromResults(homeGameWins, awayGameWins, gameDay.HomeSquadId == squadId);
 
@@ -119,8 +136,8 @@ namespace SquadPage.Data
             }
 
             return homeGameWins < awayGameWins
-                ? new SquadRecord(0, 1, 0)
-                : new SquadRecord(1, 0, 0);
+                ? new SquadRecord(1, 0, 0)
+                : new SquadRecord(0, 1, 0);
         }
 
         public IEnumerable<GameDayInfo> GetGameDays(long squadId)
@@ -141,6 +158,96 @@ namespace SquadPage.Data
             }
 
             return GameDaysToGameDayInfos(dtos);
+        }
+
+        public GameDayInfo GetGameDay(long gameDayId)
+        {
+            using var conn = new NpgsqlConnection(BuildConString());
+            //move to singleton?
+            using var db = new NPoco.Database(conn);
+
+            db.Connection?.Open();
+
+            var gameDay = db.Fetch<GameDay>()
+                .First(gameDay => gameDay.Id == gameDayId);
+
+            db.Connection?.Close();
+
+            if (gameDay == null)
+            {
+                throw new Exception("Unable to retrieve data");
+            }
+
+            return gameDay.ToGameDayInfo();
+        }
+
+        public GameDayDetails GetGameDayDetails(long gameDayId, long squadId)
+        {
+            var gameDayInfo = GetGameDay(gameDayId);
+
+            var gameDay = new GameDayDetails()
+            {
+                Id = gameDayInfo.Id,
+                AwaySquadId = gameDayInfo.AwaySquadId,
+                GameDate = gameDayInfo.GameDate,
+                GameLocation = gameDayInfo.GameLocation,
+                GameStatus = gameDayInfo.GameStatus,
+                GameType = gameDayInfo.GameType,
+                HomeSquadId = gameDayInfo.HomeSquadId
+            };
+
+            if (gameDay == null)
+            {
+                throw new Exception("Unable to retrieve data");
+            }
+
+            using var conn = new NpgsqlConnection(BuildConString());
+            //move to singleton?
+            using var db = new NPoco.Database(conn);
+
+            db.Connection?.Open();
+
+            var sql = "SELECT match_results_id FROM match_results WHERE game_day_id = @gameDayId";
+            var matchId = db.Fetch<long>(sql, new { gameDayId }).FirstOrDefault(0);
+            var gameResults = db
+                .Fetch<GameResults>()
+                .Where(result => result.MatchResultsId == matchId)
+                .ToList();
+
+            gameDay.Result = ConvertGameResultsToGameResultInfo(gameResults, gameDay.HomeSquadId == squadId);
+
+            db.Connection?.Close();
+
+            return gameDay;
+        }
+
+        private MatchResultInfo ConvertGameResultsToGameResultInfo(List<GameResults> gameResults, bool isHome)
+        {
+            var gameResultInfos = new List<GameResultInfo>();
+
+            if (isHome)
+            {
+                gameResultInfos.AddRange(gameResults.Select(result =>
+                    new GameResultInfo()
+                    {
+                        OurScore = result.HomeScore,
+                        TheirScore = result.AwayScore,
+                        Won = result.HomeScore > result.AwayScore
+
+                    }));
+
+                return new MatchResultInfo(gameResultInfos);
+            }
+
+            gameResultInfos.AddRange(gameResults.Select(result =>
+                new GameResultInfo()
+                {
+                    OurScore = result.AwayScore,
+                    TheirScore = result.HomeScore,
+                    Won = result.HomeScore < result.AwayScore
+                }));
+
+            return new MatchResultInfo(gameResultInfos);
         }
 
         private IEnumerable<GameDayInfo> GameDaysToGameDayInfos(IEnumerable<GameDay> gameDays)

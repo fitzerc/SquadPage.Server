@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using System.Globalization;
+using Microsoft.Extensions.Configuration;
 using Npgsql;
 using SquadPage.Data.Models;
 using SquadPage.Shared.DataInterfaces;
@@ -56,7 +57,15 @@ namespace SquadPage.Data
             var responseSquads = squads.Select(squad =>
             {
                 var squadResp = squad.ToSquadInfoResp();
-                squadResp.Record = GetSquadRecord(squadResp.Id);
+
+
+                var idIsInteger = Int64.TryParse(squadResp.Id, out var squadIdAsInt);
+                if (!idIsInteger)
+                {
+                    throw new Exception("Squad Id must be an integer");
+                }
+
+                squadResp.Record = GetSquadRecord(squadIdAsInt);
                 return squadResp;
             });
 
@@ -78,8 +87,17 @@ namespace SquadPage.Data
                 throw new Exception("Unable to retrieve data");
             }
 
+
             var squadInfo = squad.ToSquadInfoResp();
-            squadInfo.Record.AddRecord(GetSquadRecord(squadInfo.Id));
+
+            var idIsInteger = Int64.TryParse(squadInfo.Id, out var squadIdAsInt);
+
+            if (!idIsInteger)
+            {
+                throw new Exception("Squad Id must be an integer");
+            }
+
+            squadInfo.Record.AddRecord(GetSquadRecord(squadIdAsInt));
 
             return squadInfo;
         }
@@ -98,7 +116,7 @@ namespace SquadPage.Data
             {
                 var matchId = db
                     .Fetch<MatchResults>()
-                    .Where(matchResult => matchResult.GameDayId == gameDay.Id)
+                    .Where(matchResult => matchResult.GameDayId.ToString() == gameDay.Id)
                     .Select(matchResult => matchResult.Id)
                     .FirstOrDefault(0);
 
@@ -112,7 +130,7 @@ namespace SquadPage.Data
                                   "WHERE match_results_id = @matchId AND home_score < away_score";
                 var awayGameWins = db.Fetch<int>(awayWinsSql, new { matchId }).FirstOrDefault(0);
 
-                var recordForResults = GetRecordFromResults(homeGameWins, awayGameWins, gameDay.HomeSquadId == squadId);
+                var recordForResults = GetRecordFromResults(homeGameWins, awayGameWins, gameDay.HomeSquadId == squadId.ToString());
 
                 record.AddRecord(recordForResults);
             }
@@ -214,11 +232,29 @@ namespace SquadPage.Data
                 .Where(result => result.MatchResultsId == matchId)
                 .ToList();
 
-            gameDay.Result = ConvertGameResultsToGameResultInfo(gameResults, gameDay.HomeSquadId == squadId);
+            gameDay.Result = ConvertGameResultsToGameResultInfo(gameResults, gameDay.HomeSquadId == squadId.ToString());
 
             db.Connection?.Close();
 
             return gameDay;
+        }
+
+        public IEnumerable<GameDayDetails> GetGamesDetailsBySquad(long squadId)
+        {
+            var gameDetails = new List<GameDayDetails>();
+            var games = GetGameDays(squadId);
+
+            foreach (var game in games)
+            {
+                gameDetails.Add(GetGameDayDetails(long.Parse(game.Id), squadId));
+            }
+
+            if (gameDetails.Count == 0)
+            {
+                throw new Exception("Unable to retrieve data");
+            }
+
+            return gameDetails;
         }
 
         private MatchResultInfo ConvertGameResultsToGameResultInfo(List<GameResults> gameResults, bool isHome)

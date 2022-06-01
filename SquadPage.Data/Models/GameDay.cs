@@ -32,13 +32,13 @@ namespace SquadPage.Data.Models
         {
             return new GameDayInfo()
             {
-                AwaySquadId = AwaySquadId,
+                AwaySquadId = AwaySquadId.ToString(),
                 GameDate = GameDate,
                 GameLocation = Location,
                 GameStatus = Status,
                 GameType = Type,
-                HomeSquadId = HomeSquadId,
-                Id = Id
+                HomeSquadId = HomeSquadId.ToString(),
+                Id = Id.ToString()
             };
         }
     }

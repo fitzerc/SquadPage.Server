@@ -43,5 +43,26 @@ namespace SquadPage.Server.Controllers
                 return BadRequest(e.Message);
             }
         }
+
+        [HttpGet]
+        [Route("all/{squadId}")]
+        public ActionResult<IEnumerable<GameDayDetails>> GetAllBySquad(string squadId)
+        {
+            try
+            {
+                var squadIdIsInt = long.TryParse(squadId, out var squadIdAsInt);
+
+                if (!squadIdIsInt)
+                {
+                    return BadRequest("squadId must be an integer");
+                }
+
+                return Ok(_dataAccess.GetGamesDetailsBySquad(squadIdAsInt));
+            }
+            catch (Exception e)
+            {
+                return BadRequest(e.Message);
+            }
+        }
     }
 }

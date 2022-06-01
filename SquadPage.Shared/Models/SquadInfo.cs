@@ -3,7 +3,7 @@
     public class SquadInfoResp
     {
         public string Name { get; set; } = "Squad Name";
-        public Int64 Id { get; set; } = 0;
+        public string Id { get; set; } = "0";
         public int Number { get; set; } = 0;
         public SquadRecord Record { get; set; } = new SquadRecord(0, 0, 0);
     }

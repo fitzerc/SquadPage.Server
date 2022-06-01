@@ -20,7 +20,7 @@ namespace SquadPage.Data.Models
         {
             return new SquadInfoResp()
             {
-                Id = Id,
+                Id = Id.ToString(),
                 Name = Name,
                 Number = Number
             };

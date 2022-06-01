@@ -8,11 +8,11 @@ namespace SquadPage.Server.Controllers
     [ApiController]
     public class GameDayController : ControllerBase
     {
-        private readonly IDataAccess _dataAccess;
+        private readonly IGameDayDataAccess _gameDayDataAccess;
 
-        public GameDayController(IDataAccess dataAccess)
+        public GameDayController(IGameDayDataAccess gameDayDataAccess)
         {
-            _dataAccess = dataAccess;
+            _gameDayDataAccess = gameDayDataAccess;
         }
 
         // GET: GameDayController
@@ -22,7 +22,7 @@ namespace SquadPage.Server.Controllers
         {
             try
             {
-                var gameDays = _dataAccess.GetGameDays(squadId);
+                var gameDays = _gameDayDataAccess.GetGameDays(squadId);
                 return Ok(gameDays);
             }
             catch (Exception e)

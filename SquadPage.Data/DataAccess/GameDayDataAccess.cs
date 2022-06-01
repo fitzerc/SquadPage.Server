@@ -1,17 +1,21 @@
-﻿using System.Globalization;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Npgsql;
 using SquadPage.Data.Models;
 using SquadPage.Shared.DataInterfaces;
 using SquadPage.Shared.Models;
 
-namespace SquadPage.Data
+namespace SquadPage.Data.DataAccess
 {
-    public class DataAccess : IDataAccess
+    public class GameDayDataAccess : IGameDayDataAccess
     {
         private readonly IConfiguration _config;
 
-        public DataAccess(IConfiguration config)
+        public GameDayDataAccess(IConfiguration config)
         {
             _config = config;
         }
@@ -34,6 +38,25 @@ namespace SquadPage.Data
             }
 
             return GameDaysToGameDayInfos(dtos);
+        }
+
+        public string BuildConString()
+        {
+            var builder = new NpgsqlConnectionStringBuilder();
+            builder.Host = _config["Cockroach:Host"];
+            builder.Port = int.Parse(_config["Cockroach:Port"]);
+            builder.Database = _config["Cockroach:Database"];
+            builder.SslMode = SslMode.VerifyFull;
+            builder.Options = _config["Cockroach:Options"];
+            builder.Username = _config["Cockroach:Username"];
+            builder.Password = _config["Cockroach:Password"];
+
+            return builder.ConnectionString;
+        }
+
+        private IEnumerable<GameDayInfo> GameDaysToGameDayInfos(IEnumerable<GameDay> gameDays)
+        {
+            return gameDays.Select(gameDay => gameDay.ToGameDayInfo()).ToList();
         }
 
         public GameDayInfo GetGameDay(long gameDayId)
@@ -97,24 +120,6 @@ namespace SquadPage.Data
             return gameDay;
         }
 
-        public IEnumerable<GameDayDetails> GetGamesDetailsBySquad(long squadId)
-        {
-            var gameDetails = new List<GameDayDetails>();
-            var games = GetGameDays(squadId);
-
-            foreach (var game in games)
-            {
-                gameDetails.Add(GetGameDayDetails(long.Parse(game.Id), squadId));
-            }
-
-            if (gameDetails.Count == 0)
-            {
-                throw new Exception("Unable to retrieve data");
-            }
-
-            return gameDetails;
-        }
-
         private MatchResultInfo ConvertGameResultsToGameResultInfo(List<GameResults> gameResults, bool isHome)
         {
             var gameResultInfos = new List<GameResultInfo>();
@@ -144,23 +149,22 @@ namespace SquadPage.Data
             return new MatchResultInfo(gameResultInfos);
         }
 
-        private IEnumerable<GameDayInfo> GameDaysToGameDayInfos(IEnumerable<GameDay> gameDays)
+        public IEnumerable<GameDayDetails> GetGamesDetailsBySquad(long squadId)
         {
-            return gameDays.Select(gameDay => gameDay.ToGameDayInfo()).ToList();
-        }
+            var gameDetails = new List<GameDayDetails>();
+            var games = GetGameDays(squadId);
 
-        private string BuildConString()
-        {
-            var builder = new NpgsqlConnectionStringBuilder();
-            builder.Host = _config["Cockroach:Host"];
-            builder.Port = int.Parse(_config["Cockroach:Port"]);
-            builder.Database = _config["Cockroach:Database"];
-            builder.SslMode = SslMode.VerifyFull;
-            builder.Options = _config["Cockroach:Options"];
-            builder.Username = _config["Cockroach:Username"];
-            builder.Password = _config["Cockroach:Password"];
+            foreach (var game in games)
+            {
+                gameDetails.Add(GetGameDayDetails(long.Parse(game.Id), squadId));
+            }
 
-            return builder.ConnectionString;
+            if (gameDetails.Count == 0)
+            {
+                throw new Exception("Unable to retrieve data");
+            }
+
+            return gameDetails;
         }
     }
 }

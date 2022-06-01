@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Npgsql;
+using SquadPage.Data.DataAccess;
 using SquadPage.Data.Models;
 using SquadPage.Shared.DataInterfaces;
 using SquadPage.Shared.Models;
@@ -39,7 +40,7 @@ public class SquadDataAccess : ISquadDataAccess
 
     public SquadRecord GetSquadRecord(Int64 squadId)
     {
-        var da = new DataAccess(_config);
+        var da = new GameDayDataAccess(_config);
         using var conn = new NpgsqlConnection(BuildConString());
         //move to singleton?
         using var db = new NPoco.Database(conn);
@@ -110,11 +111,65 @@ public class SquadDataAccess : ISquadDataAccess
 
     public IEnumerable<SquadInfoResp> GetSquads()
     {
-        throw new NotImplementedException();
+        using var conn = new NpgsqlConnection(BuildConString());
+        //move to singleton?
+        using var db = new NPoco.Database(conn);
+        db.Connection?.Open();
+
+        var squads = db.Fetch<Squad>().ToList();
+
+        db.Connection?.Close();
+
+        if (!squads.Any())
+        {
+            throw new Exception("Unable to retrieve data");
+        }
+
+        var responseSquads = squads.Select(squad =>
+        {
+            var squadResp = squad.ToSquadInfoResp();
+
+
+            var idIsInteger = Int64.TryParse(squadResp.Id, out var squadIdAsInt);
+            if (!idIsInteger)
+            {
+                throw new Exception("Squad Id must be an integer");
+            }
+
+            squadResp.Record = GetSquadRecord(squadIdAsInt);
+            return squadResp;
+        });
+
+        return responseSquads;
     }
 
     public SquadInfoResp GetSquadInfoByNumber(int squadNumber)
     {
-        throw new NotImplementedException();
+        using var conn = new NpgsqlConnection(BuildConString());
+        //move to singleton?
+        using var db = new NPoco.Database(conn);
+        db.Connection?.Open();
+
+        var squad = db.Fetch<Squad>().FirstOrDefault(squad => squad.Number == squadNumber, null);
+        db.Connection?.Close();
+
+        if (squad == null)
+        {
+            throw new Exception("Unable to retrieve data");
+        }
+
+
+        var squadInfo = squad.ToSquadInfoResp();
+
+        var idIsInteger = Int64.TryParse(squadInfo.Id, out var squadIdAsInt);
+
+        if (!idIsInteger)
+        {
+            throw new Exception("Squad Id must be an integer");
+        }
+
+        squadInfo.Record.AddRecord(GetSquadRecord(squadIdAsInt));
+
+        return squadInfo;
     }
 }

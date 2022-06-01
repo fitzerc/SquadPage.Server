@@ -1,5 +1,6 @@
 
 using SquadPage.Data;
+using SquadPage.Data.DataAccess;
 using SquadPage.Shared.DataInterfaces;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -23,8 +24,8 @@ builder.Services.AddCors(options =>
 
 
 builder.Services.AddControllers().AddNewtonsoftJson();
-builder.Services.AddScoped<IDataAccess, DataAccess>();
 builder.Services.AddScoped<ISquadDataAccess, SquadDataAccess>();
+builder.Services.AddScoped<IGameDayDataAccess, GameDayDataAccess>();
 
 var app = builder.Build();
 

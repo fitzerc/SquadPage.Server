@@ -7,11 +7,11 @@ namespace SquadPage.Server.Controllers
     [Route("api/[controller]")]
     public class GameDayDetailsController : Controller
     {
-        private readonly IDataAccess _dataAccess;
+        private readonly IGameDayDataAccess _gameDayDataAccess;
 
-        public GameDayDetailsController(IDataAccess dataAccess)
+        public GameDayDetailsController(IGameDayDataAccess gameDayDataAccess)
         {
-            _dataAccess = dataAccess;
+            _gameDayDataAccess = gameDayDataAccess;
         }
 
         [HttpGet]
@@ -20,7 +20,7 @@ namespace SquadPage.Server.Controllers
         {
             try
             {
-                var gameDay = _dataAccess.GetGameDayDetails(gameDayId, squadId);
+                var gameDay = _gameDayDataAccess.GetGameDayDetails(gameDayId, squadId);
                 return gameDay;
             }
             catch (Exception e)
@@ -35,7 +35,7 @@ namespace SquadPage.Server.Controllers
         {
             try
             {
-                var gameDay = _dataAccess.GetGameDay(gameDayId);
+                var gameDay = _gameDayDataAccess.GetGameDay(gameDayId);
                 return gameDay;
             }
             catch (Exception e)
@@ -57,7 +57,7 @@ namespace SquadPage.Server.Controllers
                     return BadRequest("squadId must be an integer");
                 }
 
-                return Ok(_dataAccess.GetGamesDetailsBySquad(squadIdAsInt));
+                return Ok(_gameDayDataAccess.GetGamesDetailsBySquad(squadIdAsInt));
             }
             catch (Exception e)
             {

@@ -8,12 +8,12 @@ namespace SquadPage.Server.Controllers
     [ApiController]
     public class SquadController : ControllerBase
     {
-        private readonly IDataAccess _dataAccess;
+        private readonly ISquadDataAccess _squadDataAccess;
 
         // GET: api/<SquadController>
-        public SquadController(IDataAccess dataAccess)
+        public SquadController(ISquadDataAccess squadDataAccess)
         {
-            _dataAccess = dataAccess;
+            _squadDataAccess = squadDataAccess;
         }
 
         [HttpGet]
@@ -22,7 +22,7 @@ namespace SquadPage.Server.Controllers
         {
             try
             {
-                return _dataAccess.GetSquadInfoByNumber(squadNumber);
+                return _squadDataAccess.GetSquadInfoByNumber(squadNumber);
             }
             catch (Exception e)
             {
@@ -36,7 +36,7 @@ namespace SquadPage.Server.Controllers
         {
             try
             {
-                return _dataAccess.GetSquadInfo(squadId);
+                return _squadDataAccess.GetSquadInfo(squadId);
             }
             catch (Exception e)
             {
@@ -49,7 +49,7 @@ namespace SquadPage.Server.Controllers
         {
             try
             {
-                return Ok(_dataAccess.GetSquads());
+                return Ok(_squadDataAccess.GetSquads());
             }
             catch (Exception e)
             {

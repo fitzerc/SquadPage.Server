@@ -24,6 +24,7 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddControllers().AddNewtonsoftJson();
 builder.Services.AddScoped<IDataAccess, DataAccess>();
+builder.Services.AddScoped<ISquadDataAccess, SquadDataAccess>();
 
 var app = builder.Build();
 
